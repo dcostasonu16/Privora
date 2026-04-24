@@ -73,37 +73,38 @@ function scrubData(target) {
     });
 }
 
-// 4. The Detection Logic (Where you add your code)
+// 4. Fixed Detection Logic
 function checkElement(el) {
     const text = el.value || el.innerText || "";
     
     chrome.storage.local.get(['toggle-identity', 'toggle-secrets', 'toggle-network'], (settings) => {
         let activeRisks = [];
 
+        // Check if settings are ON (default to true if undefined)
         if (settings['toggle-identity'] !== false) {
             if (text.match(privacyPatterns.email)) activeRisks.push("email");
             if (text.match(privacyPatterns.studentID)) activeRisks.push("studentID");
             if (text.match(privacyPatterns.phone)) activeRisks.push("phone");
         }
-
         if (settings['toggle-secrets'] !== false) {
             if (text.match(privacyPatterns.apiKey)) activeRisks.push("apiKey");
         }
-
         if (settings['toggle-network'] !== false) {
             if (text.match(privacyPatterns.ipv4)) activeRisks.push("ipv4");
         }
 
         if (activeRisks.length > 0) {
-            el.style.border = "2px solid #38bdf8";
-            // Optional: add a light tint so the user sees the box change
-            el.style.backgroundColor = "#f0f9ff"; 
+            // THE RED BOX: Making it loud and clear
+            el.style.border = "2px solid #ef4444"; 
+            el.style.backgroundColor = "#fff5f5"; 
             
             badge.innerText = `Risk Found: ${activeRisks.join(", ")}`;
             badge.style.display = "block";
-            badge.style.background = "#38bdf8"; 
+            badge.style.background = "#ef4444"; // Warning Red
+            badge.style.color = "white";
             badge.onclick = () => scrubData(el);
         } else {
+            // RESET: Only if no risks are left
             el.style.border = "";
             el.style.backgroundColor = "";
             badge.style.display = "none";
@@ -111,11 +112,18 @@ function checkElement(el) {
     });
 }
 
-// 5. The Observer (Watching for typing)
+// 5. The Observer (With a "Glitch Filter")
+let timeout = null;
 const observer = new MutationObserver(() => {
     const inputs = document.querySelectorAll('textarea, input, [contenteditable="true"], #prompt-textarea, .ProseMirror');
+    
     inputs.forEach(input => {
-        checkElement(input);
+        // Prevent the "glitch" by waiting for the user to stop typing for 100ms
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            checkElement(input);
+        }, 100);
+
         if (!input.dataset.specCheckAttached) {
             input.addEventListener('input', () => checkElement(input));
             input.dataset.specCheckAttached = "true";
@@ -123,4 +131,4 @@ const observer = new MutationObserver(() => {
     });
 });
 
-observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+observer.observe(document.body, { childList: true, subtree: true });
