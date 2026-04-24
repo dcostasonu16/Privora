@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Load the Stats (Blocked Counter)
+    // 1. Load the Stats (Blocked Counter) - Static update
     chrome.storage.local.get(['blockedCount'], (result) => {
         const countElement = document.getElementById('leaks-blocked');
-        const total = result.blockedCount || 0;
-        animateValue(countElement, 0, total, 1000);
+        if (countElement) {
+            countElement.innerHTML = result.blockedCount || 0;
+        }
     });
 
     // 2. Manage Toggles (Settings)
@@ -12,17 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(toggles, (result) => {
         toggles.forEach(id => {
             const checkbox = document.getElementById(id);
-            // Default to 'true' if no setting exists yet
-            checkbox.checked = result[id] !== false;
+            if (checkbox) {
+                checkbox.checked = result[id] !== false;
 
-            // Save setting when changed
-            checkbox.addEventListener('change', (e) => {
-                chrome.storage.local.set({ [id]: e.target.checked });
-            });
+                checkbox.addEventListener('change', (e) => {
+                    chrome.storage.local.set({ [id]: e.target.checked });
+                });
+            }
         });
     });
 
-    // 3. Generate Report
+    // 3. Generate Report Logic (Light Mode & Static)
     document.getElementById('reportBtn').addEventListener('click', () => {
         chrome.storage.local.get(['blockedCount'], (result) => {
             const count = result.blockedCount || 0;
@@ -33,51 +34,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 <head>
                     <title>PromptArmor Security Audit</title>
                     <style>
-                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #f8fafc; background: #0f172a; }
-                        .card { 
-                            background: rgba(30, 41, 59, 0.7); 
+                        body { 
+                            font-family: 'Inter', -apple-system, sans-serif; 
                             padding: 40px; 
-                            border-radius: 20px; 
-                            border: 1px solid rgba(255,255,255,0.1);
+                            color: #1e293b; 
+                            background: #f1f5f9;
+                        }
+                        .card { 
+                            background: white; 
+                            padding: 40px; 
+                            border-radius: 16px; 
                             max-width: 600px; 
                             margin: auto; 
-                            backdrop-filter: blur(10px);
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                            border: 1px solid #e2e8f0;
                         }
                         h1 { 
-                            background: linear-gradient(135deg, #4f46e5, #8b5cf6);
-                            -webkit-background-clip: text;
-                            -webkit-text-fill-color: transparent;
-                            border-bottom: 1px solid #334155; 
-                            padding-bottom: 15px; 
+                            color: #4f46e5;
+                            border-bottom: 2px solid #f1f5f9; 
+                            padding-bottom: 15px;
+                            font-size: 24px;
+                            margin-top: 0;
                         }
-                        .stat-box { background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; }
-                        .stat { font-size: 48px; font-weight: bold; color: #8b5cf6; }
-                        ul { line-height: 1.8; color: #94a3b8; }
-                        .footer { margin-top: 30px; font-size: 11px; color: #64748b; text-align: center; }
-                        strong { color: #fff; }
+                        .stat-box { 
+                            background: #f8fafc; 
+                            padding: 24px; 
+                            border-radius: 12px; 
+                            text-align: center; 
+                            margin: 20px 0;
+                            border: 1px solid #e2e8f0;
+                        }
+                        .stat { font-size: 48px; font-weight: 800; color: #4f46e5; }
+                        ul { line-height: 1.8; color: #475569; padding-left: 20px; }
+                        .footer { margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+                        .note-box { background: #eff6ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #1e40af; }
                     </style>
                 </head>
                 <body>
                     <div class="card">
                         <h1>PromptArmor Privacy Audit</h1>
-                        <p><strong>Report Generated:</strong> ${timestamp}</p>
-                        <p>This document verifies the sensitive data points intercepted locally by the PromptArmor engine.</p>
+                        <p><strong>Generated:</strong> ${timestamp}</p>
+                        <p>Summary of intercepted data points for this local session:</p>
                         
                         <div class="stat-box">
                             <div class="stat">${count}</div>
-                            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Leaks Prevented</div>
+                            <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; color: #64748b;">Total Leaks Prevented</div>
                         </div>
 
                         <ul>
-                            <li><strong>Identity:</strong> Emails, Student IDs, and <strong>Phone Numbers</strong> secured.</li>
-                            <li><strong>Credentials:</strong> API Keys and Cloud Tokens redacted.</li>
-                            <li><strong>Network:</strong> Infrastructure IP addresses masked.</li>
+                            <li><strong>Identity:</strong> Emails, Student IDs, and Phone Numbers.</li>
+                            <li><strong>Credentials:</strong> API Keys and Cloud Tokens.</li>
+                            <li><strong>Network:</strong> Infrastructure IP addresses.</li>
                         </ul>
                         
-                        <p style="font-size: 13px; color: #94a3b8; border-top: 1px solid #334155; pt-15px;">
-                            <em>Compliance Note: No data was sent to external servers. All scrubbing was performed locally via Manifest V3 architecture.</em>
-                        </p>
-                        <div class="footer">PromptArmor v1.0 | AI Privacy Guardian</div>
+                        <div class="note-box">
+                            <strong>Local Shield Active:</strong> No data was transmitted to external servers. All processing occurred within the Manifest V3 sandbox.
+                        </div>
+                        <div class="footer">PromptArmor v1.0 | Security Intelligence for AI</div>
                     </div>
                 </body>
                 </html>
@@ -89,21 +102,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-
-// Counter Animation
-function animateValue(obj, start, end, duration) {
-    if (start === end) {
-        obj.innerHTML = end;
-        return;
-    }
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        obj.innerHTML = Math.floor(progress * (end - start) + start);
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        }
-    };
-    window.requestAnimationFrame(step);
-}
