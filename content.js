@@ -9,30 +9,45 @@ const privacyPatterns = {
     ipv4: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g
 };
 
-// 2. Create the Badge/Pill UI
+// 2. The "Invincible" Shadow DOM Setup
+// This protects the badge from being deleted or styled by the website
+let container = document.getElementById('spec-check-container');
+if (!container) {
+    container = document.createElement('div');
+    container.id = 'spec-check-container';
+    document.documentElement.appendChild(container);
+}
+
+const shadow = container.attachShadow({mode: 'open'});
 const badge = document.createElement('div');
 badge.id = 'spec-check-badge';
 badge.style = `
     position: fixed !important; 
     bottom: 30px !important; 
     right: 30px !important; 
-    z-index: 2147483647 !important; /* Maximum possible z-index */
+    z-index: 2147483647 !important; 
     padding: 12px 18px; 
     background: #ef4444; 
-    color: white;
+    color: white; 
     border-radius: 12px; 
     font-family: sans-serif; 
-    font-weight: bold;
+    font-weight: bold; 
     display: none; 
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    border: 2px solid rgba(255,255,255,0.3); 
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
+    border: 2px solid rgba(255,255,255,0.3);
     cursor: pointer;
-    pointer-events: auto !important;
 `;
-// Ensure the badge is always the last child of the body
-if (!document.getElementById('spec-check-badge')) {
-    document.body.appendChild(badge);
-}
+shadow.appendChild(badge);
+
+// Add Sticky CSS for the Red Box highlights
+const style = document.createElement('style');
+style.innerHTML = `
+    .spec-check-danger {
+        border: 2px solid #ef4444 !important;
+        background-color: #fff5f5 !important;
+    }
+`;
+document.head.appendChild(style);
 
 // 3. The Scrubber (Action)
 function scrubData(target) {
@@ -41,26 +56,19 @@ function scrubData(target) {
         let cleanText = text;
         let foundThisTime = 0;
 
-        // 1. Identify and count occurrences before replacing
         const checkAndCount = (pattern, toggleKey) => {
             if (result[toggleKey] !== false) {
                 const matches = text.match(pattern);
-                if (matches) {
-                    foundThisTime += matches.length;
-                    return true;
-                }
+                if (matches) foundThisTime += matches.length;
             }
-            return false;
         };
 
-        // Run checks for counting
         checkAndCount(privacyPatterns.email, 'toggle-identity');
         checkAndCount(privacyPatterns.studentID, 'toggle-identity');
         checkAndCount(privacyPatterns.phone, 'toggle-identity');
         checkAndCount(privacyPatterns.apiKey, 'toggle-secrets');
         checkAndCount(privacyPatterns.ipv4, 'toggle-network');
 
-        // 2. Perform the actual replacement
         if (result['toggle-identity'] !== false) {
             cleanText = cleanText.replace(privacyPatterns.email, "[PROTECTED_EMAIL]");
             cleanText = cleanText.replace(privacyPatterns.studentID, "[PROTECTED_ID]");
@@ -69,11 +77,10 @@ function scrubData(target) {
         if (result['toggle-secrets'] !== false) {
             cleanText = cleanText.replace(privacyPatterns.apiKey, "[SECRET_API_KEY]");
         }
-        if (settings['toggle-network'] !== false) {
+        if (result['toggle-network'] !== false) {
             cleanText = cleanText.replace(privacyPatterns.ipv4, "[INTERNAL_IP]");
         }
 
-        // 3. Update the UI and the permanent "Blocked" counter
         if (target.value !== undefined) target.value = cleanText;
         else target.innerText = cleanText;
 
@@ -81,28 +88,12 @@ function scrubData(target) {
         chrome.storage.local.set({ 'blockedCount': newTotal });
 
         badge.style.background = "#22c55e";
-        badge.innerText = `${foundThisTime} Items Secured!`;
+        badge.innerText = `🛡️ ${foundThisTime} Items Secured!`;
         setTimeout(() => { badge.style.display = "none"; }, 2000);
     });
 }
 
 // 4. Fixed Detection Logic
-// 1. Add Sticky CSS to the page header
-const style = document.createElement('style');
-style.innerHTML = `
-    .spec-check-danger {
-        border: 2px solid #ef4444 !important;
-        background-color: #fff5f5 !important;
-    }
-    #spec-check-badge {
-        position: fixed; bottom: 20px; right: 20px; z-index: 10000;
-        padding: 12px 18px; background: #ef4444; color: white;
-        border-radius: 12px; font-family: sans-serif; font-weight: bold;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4); cursor: pointer;
-    }
-`;
-document.head.appendChild(style);
-
 function checkElement(el) {
     const text = el.value || el.innerText || "";
     
@@ -122,44 +113,37 @@ function checkElement(el) {
         }
 
         if (activeRisks.length > 0) {
-            // Apply the sticky CSS class instead of manual styles
             el.classList.add('spec-check-danger');
             badge.innerText = `⚠️ Risk Found: ${activeRisks.join(", ")}`;
             badge.style.display = "block";
+            badge.style.background = "#ef4444";
             badge.onclick = () => scrubData(el);
         } else {
-            // Remove the sticky class
             el.classList.remove('spec-check-danger');
             badge.style.display = "none";
         }
     });
 }
 
-// 5. The Observer (With a "Glitch Filter")
+// 5. The "High-Response" Observer
 const observer = new MutationObserver(() => {
     const inputs = document.querySelectorAll('textarea, input, [contenteditable="true"], #prompt-textarea, .ProseMirror');
     
     inputs.forEach(input => {
-        // Run check IMMEDIATELY so it doesn't flicker
         checkElement(input);
-
         if (!input.dataset.specCheckAttached) {
-            // Watch for typing
             input.addEventListener('input', () => checkElement(input));
-            // Watch for clicks (in case the site clears styles on click)
             input.addEventListener('click', () => checkElement(input));
             input.dataset.specCheckAttached = "true";
         }
     });
 
-    // CRITICAL: If the AI website deletes your badge, this puts it back instantly
-    if (!document.getElementById('spec-check-badge')) {
-        document.body.appendChild(badge);
+    if (!document.getElementById('spec-check-container')) {
+        document.documentElement.appendChild(container);
     }
 });
 
-// Watch for everything: text changes, new boxes, and deletions
-observer.observe(document.body, { 
+observer.observe(document.documentElement, { 
     childList: true, 
     subtree: true, 
     characterData: true 
