@@ -26,30 +26,53 @@ function scrubData(target) {
     chrome.storage.local.get(['toggle-identity', 'toggle-secrets', 'toggle-network', 'blockedCount'], (result) => {
         let text = target.value || target.innerText || "";
         let cleanText = text;
-        let countThisSession = 0;
+        let foundThisTime = 0;
 
-        // Logic to count and replace
+        // 1. Identify and count occurrences before replacing
+        const checkAndCount = (pattern, toggleKey) => {
+            if (result[toggleKey] !== false) {
+                const matches = text.match(pattern);
+                if (matches) {
+                    foundThisTime += matches.length;
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Run checks for counting
+        checkAndCount(privacyPatterns.email, 'toggle-identity');
+        checkAndCount(privacyPatterns.studentID, 'toggle-identity');
+        checkAndCount(privacyPatterns.phone, 'toggle-identity');
+        checkAndCount(privacyPatterns.apiKey, 'toggle-secrets');
+        checkAndCount(privacyPatterns.ipv4, 'toggle-network');
+
+        // 2. Perform the actual replacement
         if (result['toggle-identity'] !== false) {
-            const emailMatches = text.match(privacyPatterns.email);
-            if (emailMatches) countThisSession += emailMatches.length;
-            // ... same for IDs and Phone
             cleanText = cleanText.replace(privacyPatterns.email, "[PROTECTED_EMAIL]");
             cleanText = cleanText.replace(privacyPatterns.studentID, "[PROTECTED_ID]");
             cleanText = cleanText.replace(privacyPatterns.phone, "[PROTECTED_PHONE]");
         }
-        
-        // Update the total count in storage
-        const newTotal = (result.blockedCount || 0) + (countThisSession || 1); 
-        chrome.storage.local.set({ 'blockedCount': newTotal });
+        if (result['toggle-secrets'] !== false) {
+            cleanText = cleanText.replace(privacyPatterns.apiKey, "[SECRET_API_KEY]");
+        }
+        if (settings['toggle-network'] !== false) {
+            cleanText = cleanText.replace(privacyPatterns.ipv4, "[INTERNAL_IP]");
+        }
 
+        // 3. Update the UI and the permanent "Blocked" counter
         if (target.value !== undefined) target.value = cleanText;
         else target.innerText = cleanText;
 
+        const newTotal = (result.blockedCount || 0) + foundThisTime;
+        chrome.storage.local.set({ 'blockedCount': newTotal });
+
         badge.style.background = "#22c55e";
-        badge.innerText = "Data Secured!";
+        badge.innerText = `${foundThisTime} Items Secured!`;
         setTimeout(() => { badge.style.display = "none"; }, 2000);
     });
 }
+
 // 4. The Detection Logic (Where you add your code)
 function checkElement(el) {
     const text = el.value || el.innerText || "";
