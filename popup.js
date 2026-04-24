@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reportHtml = `
                 <html>
                 <head>
-                    <title>PromptArmor Security Audit</title>
+                    <title>Privora Security Audit</title>
                     <style>
                         body { 
                             font-family: 'Inter', -apple-system, sans-serif; 
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </head>
                 <body>
                     <div class="card">
-                        <h1>PromptArmor Privacy Audit</h1>
+                        <h1>Privora Privacy Audit</h1>
                         <p><strong>Generated:</strong> ${timestamp}</p>
                         <p>Summary of intercepted data points for this local session:</p>
                         
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="note-box">
                             <strong>Local Shield Active:</strong> No data was transmitted to external servers. All processing occurred within the Manifest V3 sandbox.
                         </div>
-                        <div class="footer">PromptArmor v1.0 | Security Intelligence for AI</div>
+                        <div class="footer">Privora v1.0 | Security Intelligence for AI</div>
                     </div>
                 </body>
                 </html>
