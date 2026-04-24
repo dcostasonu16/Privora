@@ -1,6 +1,8 @@
 # PromptArmor: AI Privacy Guardian
 A browser extension that uses NLP to scan a user’s prompt before it’s sent to an LLM. It flags names, addresses, or sensitive school IDs.
 
+---
+
 ### High-Level Overview
 In an era where Generative AI is a daily tool for education and work, we often forget that our prompts are not inherently private. **PromptArmor** is a browser-integrated security shield that acts as a real-time "firewall" for your thoughts. 
 
