@@ -1,4 +1,4 @@
-console.log("Spec-Check: Advanced Cyber-Shield Active...");
+console.log("Privora: Advanced Cyber-Shield Active...");
 
 // 1. Patterns Library
 const privacyPatterns = {
