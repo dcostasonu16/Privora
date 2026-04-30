@@ -21,10 +21,10 @@ This project was born out of a desire to build a zero-knowledge solution. Instea
 The Privora UI utilizes a dark slate palette with indigo and violet accents to provide a professional, trustworthy environment.
 
 **Features included:**
-**Detection Badge:** A floating alert that appears in the corner of AI textboxes when a privacy risk is detected.
-**One-Click Redact:** A prominent button that instantly replaces sensitive strings with secure placeholders.
-**Privacy Dashboard:** A clean, static popup tracking real-time stats of secured data points.
-**Security Audit:** A professional HTML report generated locally to summarize your session's protection.
+* **Detection Badge:** A floating alert that appears in the corner of AI textboxes when a privacy risk is detected.
+* **One-Click Redact:** A prominent button that instantly replaces sensitive strings with secure placeholders.
+* **Privacy Dashboard:** A clean, static popup tracking real-time stats of secured data points.
+* **Security Audit:** A professional HTML report generated locally to summarize your session's protection.
 
 ---
 
